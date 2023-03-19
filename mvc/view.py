@@ -1,9 +1,12 @@
 import os
-from datetime import datetime as dt
+import datetime as dt
 from termcolor import cprint
 
 
 class View:
+    DATE_FORMAT = '%d.%m.%Y'
+    DATETIME_FORMAT = '%d.%m.%Y %H:%M'
+
     def __init__(self, separator_sign='=', width=50, tab_length=2):
         self.separator = separator_sign * width
         self.width = width
@@ -37,7 +40,7 @@ class View:
 
     def print_schedule(self, schedule_data: dict):
         for day, reservations in schedule_data.items():
-            print(self.tab + self._pretty_date(date=day))
+            print(self.tab + self._pretty_date(date_=day))
             if reservations:
                 for reservation in reservations:
                     name, res_start, res_end = reservation
@@ -56,21 +59,19 @@ class View:
         print(question)
 
     # Utils:
-    @staticmethod
-    def _pretty_date(date: str) -> str:
-        date = dt.strptime(date, '%Y-%m-%d').date()
-        today = dt.today().date()
-        day_delta = (date - today).days
+    def _pretty_date(self, date_: dt.date) -> str:
+        today = dt.date.today()
+        day_delta = (date_ - today).days
 
         if day_delta == 0:
             return 'Today'
         if day_delta < 0:
-            return f"{date.strftime('%d.%m.%Y')} (Archive)"
+            return f"{date_.strftime(self.DATE_FORMAT)} (Archive)"
         if day_delta == 1:
             return 'Tomorrow'
         if day_delta <= 6:
-            return date.strftime('%A')
-        if date.year == today.year:
-            return date.strftime('%d.%m')
+            return date_.strftime('%A')
+        if date_.year == today.year:
+            return date_.strftime('%d.%m')
 
-        return date.strftime('%d.%m.%Y')
+        return date_.strftime(self.DATE_FORMAT)

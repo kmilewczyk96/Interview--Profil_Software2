@@ -1,15 +1,17 @@
 import sys
+import datetime as dt
 
 from mvc.model import Model
 from mvc.view import View
-from utils.validator import Validator
 
 
 class Controller:
+    DATE_FORMAT = '%d.%m.%Y'
+    DATETIME_FORMAT = '%d.%m.%Y %H:%M'
+
     def __init__(self, model: Model, view: View):
         self.model = model
         self.view = view
-        self.validator = Validator()
         self.initial_launch = True
 
     def start(self):
@@ -58,12 +60,7 @@ class Controller:
         self.view.print_question(question='What is the date of your reservation?')
         datetime_ = self._prompt_datetime()
 
-        if self.validator.validate_one_hour_limit(datetime_=datetime_):
-            err_code = self.model.delete_reservation(name=name, datetime_=datetime_)
-        else:
-            self.view.print_error(error_message='Can not cancel reservation less than 1h before.')
-            return None
-
+        err_code = self.model.delete_reservation(name=name, datetime_=datetime_)
         if err_code:
             self.view.print_error(error_message=self.model.ERRORS[err_code])
         else:
@@ -75,11 +72,8 @@ class Controller:
         self.view.print_question(question='Date (to): (dd.mm.yyyy)')
         date_to = self._prompt_date()
 
-        if self.validator.validate_date_range(date_from=date_from, date_to=date_to):
-            schedule_data = self.model.get_schedule_data(date_from=date_from, date_to=date_to)
-            self.view.print_schedule(schedule_data=schedule_data)
-        else:
-            self.view.print_error(error_message='Provided date range is invalid!')
+        schedule_data = self.model.get_schedule_data(date_from=date_from, date_to=date_to)
+        self.view.print_schedule(schedule_data=schedule_data)
 
     def _export_to_file(self):
         self.view.print_question(question='Date (from): (dd.mm.yyyy)')
@@ -91,13 +85,21 @@ class Controller:
             'csv',
             'json'
         )
-        file_format = self._prompt_choice(
+        choice = self._prompt_choice(
             question='Please pick desired file format:',
             choices=format_choices
         )
+        file_format = format_choices[choice]
 
         self.view.print_question(question='Please provide desired filename')
         filename = self._prompt_filename()
+
+        self.model.export_schedule_data(
+            date_from=date_from,
+            date_to=date_to,
+            file_format=file_format,
+            filename=filename
+        )
 
     def _exit_program(self):
         confirmation_choices = (
@@ -140,29 +142,30 @@ class Controller:
             else:
                 return pick
 
-    def _prompt_date(self):
+    def _prompt_date(self) -> dt.date:
         while True:
             date_ = self._pretty_input()
-            if self.validator.validate_date(date_=date_):
-                return self._convert_date_into_db_format(date_=date_)
-            else:
+            try:
+                date_ = dt.datetime.strptime(date_, self.DATE_FORMAT).date()
+            except ValueError:
                 self.view.print_error('Please provide a valid date.')
+            else:
+                return date_
 
-    def _prompt_datetime(self):
+    def _prompt_datetime(self) -> dt.datetime:
         while True:
             datetime_ = self._pretty_input()
-            if self.validator.validate_datetime(datetime_=datetime_):
-                return self._convert_datetime_into_db_format(datetime_=datetime_)
-            else:
+            try:
+                datetime_ = dt.datetime.strptime(datetime_, self.DATETIME_FORMAT)
+            except ValueError:
                 self.view.print_error('Please provide a valid date.')
+            else:
+                return datetime_
 
     def _prompt_filename(self):
         while True:
             filename = self._pretty_input()
-            if self.validator.validate_filename(filename=filename):
-                return filename
-            else:
-                self.view.print_error('Filename must not be empty, or contain restricted characters.')
+            return filename
 
     def _prompt_name(self):
         while True:
@@ -173,19 +176,6 @@ class Controller:
                 self.view.print_error('Please provide non-empty name.')
 
     # Utils:
-    @staticmethod
-    def _convert_date_into_db_format(date_: str):
-        day, month, year = date_.split('.')
-
-        return f'{year}-{month}-{day}'
-
-    @staticmethod
-    def _convert_datetime_into_db_format(datetime_: str):
-        date_, time_ = datetime_.split()
-        day, month, year = date_.split('.')
-
-        return f'{year}-{month}-{day} {time_}'
-
     def _pretty_input(self):
         try:
             input_ = input('>'.ljust(self.view.tab_length))
