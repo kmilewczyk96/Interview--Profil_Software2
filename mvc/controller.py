@@ -17,7 +17,7 @@ class Controller:
         self.view = view
         self.initial_launch = True
 
-    def start(self):
+    def start(self) -> None:
         """Method responsible for preparing the Main Menu."""
         self.view.clear_screen()
 
@@ -76,41 +76,74 @@ class Controller:
             return None
 
         reservations_available = self.model.check_possible_reservations(datetime_=reservation_start)
+        if not reservations_available:
+            reservation_start = self.model.recommend_other_date(datetime_=reservation_start)
+            alternative_choices = (
+                'Yes',
+                'No'
+            )
+            alternative_choice = self._prompt_choice(
+                question=f'The time you choose is unavailable,'
+                         f' would you like to make reservation on: '
+                         f'{reservation_start.strftime(self.DATETIME_FORMAT)} instead?',
+                choices=alternative_choices
+            )
+            match alternative_choice:
+                case 0:
+                    reservations_available = self.model.check_possible_reservations(datetime_=reservation_start)
+                case 1:
+                    self._create_reservation()
+                    return None
+
         duration_choices = tuple(f'{time_} minutes.' for time_ in reservations_available)
         choice = self._prompt_choice('For how long would you like to make the reservation?', choices=duration_choices)
         reservation_end = reservation_start + dt.timedelta(seconds=60 * reservations_available[choice])
 
-        self.model.create_reservation(name=name, res_start=reservation_start, res_end=reservation_end)
+        error, message = self.model.create_reservation(name=name, res_start=reservation_start, res_end=reservation_end)
+        self.view.print_operation_status(error=error, message=message)
 
     def _delete_reservation(self) -> None:
         """Delete reservation flow."""
         self.view.print_question(question='What is your name?')
         name = self._prompt_name()
         self.view.print_question(question='What is the date of your reservation?')
-        datetime_ = self._prompt_datetime()
+        reservation_start = self._prompt_datetime()
 
-        error, message = self.model.delete_reservation(name=name, datetime_=datetime_)
-        if error:
-            self.view.print_error(error_message=message)
-        else:
-            self.view.print_success(success_message=message)
+        if not self.VALIDATOR.validate_is_in_future(datetime_=reservation_start):
+            self.view.print_error('Can not cancel a reservation from past!')
+            return None
 
-    def _print_schedule(self):
+        if not self.VALIDATOR.validate_one_hour_limit(datetime_=reservation_start):
+            self.view.print_error('Can not cancel a reservation less than 1h before!')
+            return None
+
+        error, message = self.model.delete_reservation(name=name, datetime_=reservation_start)
+        self.view.print_operation_status(error=error, message=message)
+
+    def _print_schedule(self) -> None:
         """Print schedule flow."""
         self.view.print_question(question='Date (from): (dd.mm.yyyy)')
         date_from = self._prompt_date()
         self.view.print_question(question='Date (to): (dd.mm.yyyy)')
         date_to = self._prompt_date()
 
+        if not self.VALIDATOR.validate_date_range(date_from=date_from, date_to=date_to):
+            self.view.print_error(error_message='Incorrect date range!')
+            return None
+
         schedule_data = self.model.get_schedule_data(date_from=date_from, date_to=date_to)
         self.view.print_schedule(schedule_data=schedule_data)
 
-    def _export_to_file(self):
+    def _export_to_file(self) -> None:
         """Export to file flow."""
         self.view.print_question(question='Date (from): (dd.mm.yyyy)')
         date_from = self._prompt_date()
         self.view.print_question(question='Date (to): (dd.mm.yyyy)')
         date_to = self._prompt_date()
+
+        if not self.VALIDATOR.validate_date_range(date_from=date_from, date_to=date_to):
+            self.view.print_error(error_message='Incorrect date range!')
+            return None
 
         format_choices = (
             'csv',
@@ -124,6 +157,9 @@ class Controller:
 
         self.view.print_question(question='Please provide desired filename')
         filename = self._prompt_filename()
+        if not self.VALIDATOR.validate_filename(filename=filename):
+            self.view.print_error(error_message='Filename contains restricted characters!')
+            return None
 
         error, message = self.model.export_schedule_data(
             date_from=date_from,
@@ -133,7 +169,7 @@ class Controller:
         )
         self.view.print_operation_status(error=error, message=message)
 
-    def _exit_program(self):
+    def _exit_program(self) -> None:
         """Exit program flow."""
         confirmation_choices = (
             'Yes',
@@ -147,7 +183,7 @@ class Controller:
             case 1:
                 self.start()
 
-    def _continue_work(self):
+    def _continue_work(self) -> None:
         """Continue work, determines if program should be running after operation."""
         confirmation_choices = (
             'Yes, continue.',
@@ -199,12 +235,12 @@ class Controller:
             else:
                 return datetime_
 
-    def _prompt_filename(self):
+    def _prompt_filename(self) -> str:
         while True:
             filename = self._pretty_input()
             return filename
 
-    def _prompt_name(self):
+    def _prompt_name(self) -> str:
         """Prompts name until the non-empty value is provided, then returns the name."""
         while True:
             name = self._pretty_input()
@@ -214,7 +250,7 @@ class Controller:
                 self.view.print_error('Please provide non-empty name.')
 
     # Utils:
-    def _pretty_input(self):
+    def _pretty_input(self) -> str:
         """Handles not so elegant KeyboardInterrupt error message on force quitting."""
         try:
             input_ = input('>'.ljust(self.view.tab_length))

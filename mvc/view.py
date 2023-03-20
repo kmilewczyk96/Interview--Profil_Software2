@@ -34,7 +34,7 @@ class View:
         cprint(text=header.center(self.width), attrs=['bold'], color='green')
         print(self.separator)
 
-    def print_operation_status(self, error: int, message: str):
+    def print_operation_status(self, error: int, message: str) -> None:
         if error:
             self.print_error(error_message=message)
         else:
@@ -44,7 +44,7 @@ class View:
         for pos, choice in enumerate(choices):
             print(f'{self.tab}{pos + 1}. {choice}')
 
-    def print_schedule(self, schedule_data: dict):
+    def print_schedule(self, schedule_data: dict) -> None:
         for day, reservations in schedule_data.items():
             print(self.tab + self._pretty_date(date_=day))
             if reservations:
