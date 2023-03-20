@@ -31,8 +31,14 @@ class View:
     def print_header(self, header: str) -> None:
         """Prints provided header text, with some styling."""
         print(self.separator)
-        cprint(text=header.center(self.width), attrs=['bold'])
+        cprint(text=header.center(self.width), attrs=['bold'], color='green')
         print(self.separator)
+
+    def print_operation_status(self, error: int, message: str):
+        if error:
+            self.print_error(error_message=message)
+        else:
+            self.print_success(success_message=message)
 
     def print_ordered_list(self, choices: tuple) -> None:
         for pos, choice in enumerate(choices):
@@ -44,7 +50,8 @@ class View:
             if reservations:
                 for reservation in reservations:
                     name, res_start, res_end = reservation
-                    print(f'{self.tab * 2}{name}: {res_start} - {res_end}')
+                    print(f"{self.tab * 2}{name}:"
+                          f" {res_start.strftime(self.DATETIME_FORMAT)} - {res_end.strftime(self.DATETIME_FORMAT)}")
             else:
                 print(self.tab * 2 + 'No reservations.')
             print('')
