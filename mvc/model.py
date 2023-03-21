@@ -171,7 +171,6 @@ class Model:
             f"WHERE datetime_to > '{datetime_}'"
             f"ORDER BY datetime_from"
         ).fetchall()
-        print(reservations)
 
         for i, reservation in enumerate(reservations[:-1]):
             current_end = dt.datetime.strptime(reservation[2], self.DB_DATETIME_FORMAT)
