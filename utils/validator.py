@@ -6,6 +6,7 @@ class Validator:
     """Class containing various validators."""
     @staticmethod
     def validate_date_range(date_from: dt.date, date_to: dt.date):
+        """Checks if provided date range is valid."""
         if date_from > date_to:
             return False
 
@@ -25,6 +26,7 @@ class Validator:
 
     @staticmethod
     def validate_one_hour_limit(datetime_: dt.datetime):
+        """Checks if provided datetime is less than 1 hour from now."""
         if (datetime_ - dt.datetime.now()).total_seconds() < 3600:
             return False
 
@@ -32,6 +34,7 @@ class Validator:
 
     @staticmethod
     def validate_is_in_future(datetime_: dt.datetime):
+        """Checks if provided datetime is in the future."""
         if (datetime_ - dt.datetime.now()).total_seconds() < 0:
             return False
 

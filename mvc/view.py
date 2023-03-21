@@ -35,16 +35,19 @@ class View:
         print(self.separator)
 
     def print_operation_status(self, error: int, message: str) -> None:
+        """Prints operation status with some styling."""
         if error:
             self.print_error(error_message=message)
         else:
             self.print_success(success_message=message)
 
     def print_ordered_list(self, choices: tuple) -> None:
+        """Prints ordered list."""
         for pos, choice in enumerate(choices):
             print(f'{self.tab}{pos + 1}. {choice}')
 
     def print_schedule(self, schedule_data: dict) -> None:
+        """Prints schedule."""
         for day, reservations in schedule_data.items():
             print(self.tab + self._pretty_date(date_=day))
             if reservations:
@@ -62,11 +65,13 @@ class View:
         cprint(text=success_message, color='green')
 
     def print_question(self, question: str) -> None:
+        """Prints question."""
         question = self.tab + question
         print(question)
 
     # Utils:
     def _pretty_date(self, date_: dt.date) -> str:
+        """Returns 'humanized' date, relative to current date."""
         today = dt.date.today()
         day_delta = (date_ - today).days
 

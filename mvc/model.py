@@ -22,6 +22,7 @@ class Model:
         self._prepare_db()
 
     def create_reservation(self, name: str, res_start: dt.datetime, res_end: dt.datetime) -> tuple:
+        """Creates reservation in the database."""
         res_start = res_start.strftime(self.DB_DATETIME_FORMAT)
         res_end = res_end.strftime(self.DB_DATETIME_FORMAT)
         self.cursor.execute(f"INSERT INTO reservation VALUES ('{name}', '{res_start}', '{res_end}')")
@@ -29,6 +30,7 @@ class Model:
         return self.OK, 'Successfully created reservation!'
 
     def delete_reservation(self, name: str, datetime_: dt.datetime) -> tuple:
+        """Deletes reservation from the database if it exists."""
         datetime_ = datetime_.strftime(self.DB_DATETIME_FORMAT)
         time_to_delete = self.cursor.execute(
             f"SELECT * FROM reservation WHERE full_name='{name}' AND datetime_from='{datetime_}'"
@@ -41,6 +43,7 @@ class Model:
             return self.ERROR, 'Reservation does not exist!'
 
     def get_schedule_data(self, date_from: dt.date, date_to: dt.date) -> dict:
+        """Gets schedule data from database."""
         # Creates dict for each day in provided range:
         dates_dict = {date_.date(): [] for date_ in rrule.rrule(
             freq=rrule.DAILY, dtstart=date_from, until=date_to
@@ -66,6 +69,7 @@ class Model:
         return dates_dict
 
     def export_schedule_data(self, date_from: dt.date, date_to: dt.date, file_format: str, filename: str) -> tuple:
+        """Exports schedule data from database."""
         dates_dict = self.get_schedule_data(date_from=date_from, date_to=date_to)
         exports_directory = 'exported_schedules'
         filename = os.path.join(exports_directory, filename)
@@ -80,6 +84,7 @@ class Model:
                 return self.OK, f'Successfully created: {abs_path}.json.'
 
     def check_possible_reservations(self, datetime_: dt.datetime) -> list:
+        """Checks and returns possible reservation lengths."""
         reservation_length_choices = []
         colliding_reservation = self.cursor.execute(
             f"SELECT * FROM reservation "
@@ -131,6 +136,7 @@ class Model:
             pass
 
     def _serialize_reservations(self, reservations: list) -> list:
+        """Serializes reservations data."""
         serialized_reservations = []
         for reservation in reservations:
             name, date_from, date_to = reservation
@@ -147,6 +153,7 @@ class Model:
         return serialized_reservations
 
     def check_if_eligible(self, name: str, datetime_: dt.datetime) -> bool:
+        """Checks if there are already 3 reservations made for provided name for this week."""
         weekday = datetime_.weekday()
         date_ = datetime_.date()
         week_start = date_ - dt.timedelta(days=weekday)
@@ -166,6 +173,7 @@ class Model:
         return True
 
     def recommend_other_date(self, datetime_: dt.datetime) -> dt.datetime:
+        """Recommends other date if the date requested by User is unavailable."""
         reservations = self.cursor.execute(
             f"SELECT * FROM reservation "
             f"WHERE datetime_to > '{datetime_}'"
