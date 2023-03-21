@@ -22,7 +22,7 @@
 >> 5) Name: simple string input.
 >
 >>### Program flow:
->> 1) Program starts from Main Menu and gives User 5 choices.
+>> 1) Program starts from Main Menu and gives User choice to pick one of available options.
 >> 2) Each choice got its own flow, after which User can get back to MainMenu or exit program.
 >
 >>### Main Menu options:
@@ -32,7 +32,7 @@
 >> 4) Save schedule to a file allows User to export all reservations from given date range to <br>
 >> either csv or json file. Files will be saved into `exported_schedules` folder inside program's root folder.
 >
->>### Exiting program:<br>
+>>### Exiting program:
 >> You can either choose it from Main Menu, or if you are in the hurry use: `Ctrl + C` shortcut <br>
 >> which will immediately quit program, catch KeyboardInterrupt error and clear your CLI screen.
 
@@ -42,7 +42,7 @@
 >> https://pypi.org/project/termcolor/
 > 
 >> ### python-dateutil
->> To prevent 'reinventing the wheel' I used one function from this module to get all dates from given range.
+>> To avoid 'reinventing the wheel' I used one function from this module to get all dates from given range.<br>
 >> https://pypi.org/project/python-dateutil/
 
 > 
